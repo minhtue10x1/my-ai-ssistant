@@ -45,7 +45,11 @@ router.get(
       (err, token) => {
         if (err) throw err;
         // Redirect to frontend with token
-        res.redirect(`http://localhost:5174?token=${token}`);
+        const frontendUrl = process.env.NODE_ENV === 'production'
+            ? 'https://my-ai-assistant-edc95.web.app' // Deployed Frontend
+            : 'http://localhost:5174'; // Localhost
+            
+        res.redirect(`${frontendUrl}?token=${token}`);
       }
     );
   }
