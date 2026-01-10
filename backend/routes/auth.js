@@ -29,7 +29,13 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 // @desc    Google auth callback
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:5174/login', session: false }),
+  (req, res, next) => {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
+    passport.authenticate('google', { 
+        failureRedirect: `${frontendUrl}/login`, 
+        session: false 
+    })(req, res, next);
+  },
   (req, res) => {
     // Generate token
     const payload = {
