@@ -75,7 +75,10 @@ const Login = () => {
                  background: 'white', color: '#333', border: 'none', padding: '0.8rem', cursor: 'pointer',
                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 'bold'
              }}
-             onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+             onClick={() => {
+                 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+                 window.location.href = `${API_URL}/auth/google`;
+             }}
           >
             <span style={{ fontSize: '1.2rem' }}>G</span> Sign in with Google
           </button>
