@@ -3,6 +3,8 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export const AuthProvider = ({ children }) => {
 
     if (token || tokenFromUrl) {
       try {
-        const res = await axios.get('http://localhost:5000/api/auth/me', {
+        const res = await axios.get(`${API_URL}/auth/me`, {
             headers: { 'x-auth-token': tokenFromUrl || token }
         });
         setUser(res.data);
@@ -46,13 +48,13 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
 
   const login = async (email, password) => {
-    const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+    const res = await axios.post(`${API_URL}/auth/login`, { email, password });
     localStorage.setItem('token', res.data.token);
     setToken(res.data.token);
   };
 
   const register = async (username, email, password) => {
-      const res = await axios.post('http://localhost:5000/api/auth/register', { username, email, password });
+      const res = await axios.post(`${API_URL}/auth/register`, { username, email, password });
       localStorage.setItem('token', res.data.token);
       setToken(res.data.token);
   }
