@@ -10,8 +10,8 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.NODE_ENV === 'production' 
-        ? 'https://my-ai-assistant-backend.onrender.com/api/auth/google/callback' // Update this with your ACTUAL Render URL
+      callbackURL: process.env.BACKEND_URL 
+        ? `${process.env.BACKEND_URL}/api/auth/google/callback`
         : 'http://localhost:5000/api/auth/google/callback',
     },
     async (accessToken, refreshToken, profile, done) => {
