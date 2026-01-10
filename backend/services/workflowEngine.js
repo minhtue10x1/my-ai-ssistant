@@ -1,4 +1,4 @@
-import { getRepoContent, getFileContent } from './githubService.js';
+import { getRepoContent, getFileContent, getPullRequestFiles, createReviewComment } from './githubService.js';
 import { analyzeCode } from './aiService.js';
 
 // Registry of available actions
@@ -14,12 +14,67 @@ const ACTION_REGISTRY = {
   },
   
   'ANALYZE_CODE': async (context, stepConfig) => {
-    const code = context.result.FETCH_FILE?.fileContent || context.data.code;
+    // Try to find code from previous fetch step 
+    // This handles both FETCH_FILE (single file) and FETCH_PR_CHANGES (array of files) - though logic would differ
+    const singleFileContent = context.result.step_1?.fileContent || context.result.FETCH_FILE?.fileContent || context.data.code;
+    
+    // Check if we are analyzing PR changes
+    const prChanges = context.result.FETCH_PR_CHANGES?.changes || context.result.step_1?.changes;
+
+    if (prChanges) {
+         console.log(`[Workflow] Analyzing ${prChanges.length} changed files from PR.`);
+         const reviewComments = [];
+         
+         for (const file of prChanges) {
+             if (file.status === 'removed' || !file.patch) continue;
+             
+             // Analyze the diff (patch)
+             const prompt = `Review this code diff for ${file.filename}. \n\n${file.patch}\n\nReturn ONLY a JSON array of issues in this format: [{"line": <line_number_in_diff>, "comment": "<feedback>"}]`;
+             try {
+                const analysisJson = await analyzeCode(prompt, 'review_json'); // Need 'review_json' prompt type support
+                const comments = JSON.parse(analysisJson);
+                if (Array.isArray(comments)) {
+                    comments.forEach(c => {
+                        reviewComments.push({ ...c, path: file.filename });
+                    });
+                }
+             } catch (e) {
+                 console.error(`Failed to analyze ${file.filename}`, e);
+             }
+         }
+         return { reviewComments };
+    }
+
+    // Single file fallback
     const type = stepConfig.promptType || 'general';
     console.log(`[Workflow] Analyzing code with type: ${type}`);
-    
-    const analysis = await analyzeCode(code, type);
+    const analysis = await analyzeCode(singleFileContent || 'No Code', type);
     return { analysisResult: analysis };
+  },
+
+  'FETCH_PR_CHANGES': async (context, stepConfig) => {
+      const { owner, repo, prNumber } = context.triggerData;
+      console.log(`[Workflow] Fetching PR #${prNumber} changes from ${owner}/${repo}`);
+      const changes = await getPullRequestFiles(owner, repo, prNumber);
+      return { changes };
+  },
+
+  'POST_PR_COMMENT': async (context, stepConfig) => {
+      const { owner, repo, prNumber } = context.triggerData;
+      const reviewComments = context.result.ANALYZE_CODE?.reviewComments || context.result.step_2?.reviewComments;
+      
+      if (!reviewComments || reviewComments.length === 0) {
+          console.log('[Workflow] No comments to post.');
+          return { posted: 0 };
+      }
+
+      console.log(`[Workflow] Posting ${reviewComments.length} comments to PR #${prNumber}`);
+      let postedCount = 0;
+      for (const comment of reviewComments) {
+          const success = await createReviewComment(owner, repo, prNumber, comment.comment, comment.path, comment.line);
+          if (success) postedCount++;
+      }
+      return { posted: postedCount };
   },
   
   'LOG_RESULT': async (context, stepConfig) => {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api';
-const WORKFLOW_ID = 'e2c31696-a4a9-473a-9e72-753e37529d7e'; // From previous step
+const WORKFLOW_ID = '69627edf92f16f934b87ae8a'; // From previous step
 
 const runTest = async () => {
   try {

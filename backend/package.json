@@ -19,12 +19,11 @@
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.2",
     "octokit": "^5.0.5",
     "openai": "^6.15.0",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0",
-    "sequelize": "^6.37.7",
-    "sqlite3": "^5.1.7"
+    "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

@@ -1,34 +1,25 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.js';
+import mongoose from 'mongoose';
 
-const Workflow = sequelize.define('Workflow', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
+const StepSchema = new mongoose.Schema({
+  id: String,
+  action: String,
+  config: Object // Generic object for config
+}, { _id: false });
+
+const WorkflowSchema = new mongoose.Schema({
   name: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true
   },
-  description: {
-    type: DataTypes.TEXT,
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
-  status: {
-    type: DataTypes.ENUM('active', 'inactive', 'draft'),
-    defaultValue: 'draft',
-  },
-  triggerType: {
-    type: DataTypes.STRING, // e.g., 'webhook', 'schedule', 'manual'
-  },
-  triggerConfig: {
-    type: DataTypes.JSON, // Configuration for the trigger
-  },
-  steps: {
-    type: DataTypes.JSON, // Definition of the workflow steps
-  },
-}, {
-  timestamps: true,
+  steps: [StepSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-export default Workflow;
+export default mongoose.model('Workflow', WorkflowSchema);

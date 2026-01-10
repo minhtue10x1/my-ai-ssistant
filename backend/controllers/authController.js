@@ -1,12 +1,12 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/index.js';
+import User from '../models/User.js';
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-    let user = await User.findOne({ where: { email } });
+    let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: 'User already exists' });
     }
@@ -14,15 +14,17 @@ export const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    user = await User.create({
+    user = new User({
       username,
       email,
       password: hashedPassword,
     });
 
+    await user.save();
+
     const payload = {
       user: {
-        id: user.id,
+        id: user.id, // Virtual getter in Mongoose
       },
     };
 
@@ -45,9 +47,14 @@ export const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    let user = await User.findOne({ where: { email } });
+    let user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: 'Invalid Credentials' });
+    }
+    
+    // Check if user has password (OAuth users might not, though in seedData I fixed this, but general check)
+    if (!user.password) {
+        return res.status(400).json({ msg: 'Invalid Credentials (password not set)' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -78,7 +85,7 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, { attributes: { exclude: ['password'] } });
+    const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (err) {
     console.error(err.message);

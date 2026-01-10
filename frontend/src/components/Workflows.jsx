@@ -6,7 +6,7 @@ const Workflows = () => {
   const [result, setResult] = useState(null);
   
   // Hardcoded for MVP, fetch from API in real implementation
-  const workflowId = 'e610cc72-abfd-440d-9c20-098d28f1a4aa'; // Replace if ID changes
+  const workflowId = '69627edf92f16f934b87ae8a'; // Replace if ID changes
 
   const handleRun = async () => {
       setTriggering(true);

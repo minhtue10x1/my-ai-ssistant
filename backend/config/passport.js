@@ -1,6 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { User } from '../models/index.js';
+import User from '../models/User.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -15,14 +15,14 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         // Check if user exists
-        let user = await User.findOne({ where: { googleId: profile.id } });
+        let user = await User.findOne({ googleId: profile.id });
 
         if (user) {
           return done(null, user);
         }
 
         // Check if email exists to link account (optional strategy)
-        user = await User.findOne({ where: { email: profile.emails[0].value } });
+        user = await User.findOne({ email: profile.emails[0].value });
         
         if (user) {
             // Link googleId to existing user
@@ -31,7 +31,7 @@ passport.use(
             return done(null, user);
         }
 
-        // Create new user
+        // Create new user (using new User() + save() or .create())
         user = await User.create({
           googleId: profile.id,
           username: profile.displayName,
@@ -47,14 +47,14 @@ passport.use(
   )
 );
 
-// Serialize/Deserialize not strictly needed for JWT-only flow but good practice if session used later
+// Serialize/Deserialize
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await User.findByPk(id);
+    const user = await User.findById(id);
     done(null, user);
   } catch (err) {
     done(err, null);

@@ -29,9 +29,38 @@ router.post('/github/file', auth, async (req, res) => {
 });
 
 // Hook for GitHub Webhook (keep generic for now)
-router.post('/github/webhook', (req, res) => {
-  console.log('GitHub Webhook received:', req.body);
-  // Future: Trigger Workflow Engine here
+// Hook for GitHub Webhook
+router.post('/github/webhook', async (req, res) => {
+  const event = req.headers['x-github-event'];
+  const payload = req.body;
+  
+  if (event === 'pull_request' && payload.action === 'opened') {
+      console.log(`[Webhook] PR #${payload.number} opened in ${payload.repository.full_name}`);
+      
+      const owner = payload.repository.owner.login;
+      const repo = payload.repository.name;
+      const prNumber = payload.number;
+
+      // Ideally find specific workflow matching this event. 
+      // For MVP, we'll create an ephemeral workflow definition here or fetch "Auto-Review PR"
+      const prReviewWorkflow = {
+          name: "PR Review Bot",
+          steps: [
+              { id: 'step_1', action: 'FETCH_PR_CHANGES' },
+              { id: 'step_2', action: 'ANALYZE_CODE', config: { promptType: 'review_json' } },
+              { id: 'step_3', action: 'POST_PR_COMMENT' }
+          ]
+      };
+
+      try {
+          const engine = new WorkflowEngine(prReviewWorkflow);
+          // Run in background (don't wait for it to finish to respond to webhook)
+          engine.run({ owner, repo, prNumber }).then(() => console.log('PR Workflow finished'));
+      } catch (e) {
+          console.error('Failed to run PR workflow', e);
+      }
+  }
+
   res.status(200).send('Webhook received');
 });
 
@@ -54,7 +83,7 @@ router.post('/analyze', auth, async (req, res) => {
 });
 
 // Workflow Routes
-import { Workflow } from '../models/index.js';
+import Workflow from '../models/Workflow.js'; // Default import
 import { WorkflowEngine } from '../services/workflowEngine.js';
 
 router.post('/workflow/:id/run', auth, async (req, res) => {
@@ -62,7 +91,7 @@ router.post('/workflow/:id/run', auth, async (req, res) => {
     const triggerData = req.body; // Pass repo info here
 
     try {
-        const workflow = await Workflow.findByPk(id);
+        const workflow = await Workflow.findById(id); // Mongoose findById
         if (!workflow) {
             return res.status(404).json({ error: 'Workflow not found' });
         }

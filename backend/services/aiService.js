@@ -14,6 +14,8 @@ export const analyzeCode = async (code, promptType = 'general') => {
     systemPrompt = "You are an expert code reviewer. Analyze the provided code for bugs, security vulnerabilities, and logic errors. Provide a summary of issues and suggestions for improvement.";
   } else if (promptType === 'bug_fix') {
       systemPrompt = "You are an expert debugger. Analyze the provided code, identify the bug, and provide a corrected version of the code.";
+  } else if (promptType === 'review_json') {
+      systemPrompt = "You are an automated code review bot. Your goal is to review code diffs and provide actionable comments. You MUST output ONLY a valid JSON array.";
   }
 
   try {
@@ -21,7 +23,7 @@ export const analyzeCode = async (code, promptType = 'general') => {
       model: "gpt-3.5-turbo", // Or gpt-4 if available/preferred
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Here is the code snippet to analyze:\n\n${code}` },
+        { role: "user", content: `Here is the code snippet to analyze:\n\n${code || 'No code provided.'}` }, // Explicit fallback
       ],
       max_tokens: 1000,
     });
