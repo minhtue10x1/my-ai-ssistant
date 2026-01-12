@@ -11,6 +11,16 @@ const WorkflowSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  description: String,
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
+  },
+  type: {
+      type: String, 
+      default: 'custom' // 'custom' or 'system_pr_bot'
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

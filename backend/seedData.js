@@ -29,6 +29,7 @@ const seed = async () => {
     // Create Workflow
     const workflow = await Workflow.create({
         name: 'Auto-Review Code',
+        description: 'Analyzes code quality',
         user: user._id,
         steps: [
             { id: 'step_1', action: 'FETCH_FILE', config: { path: 'backend/server.js' } },
@@ -38,6 +39,20 @@ const seed = async () => {
     });
     console.log(`Workflow created: ${workflow.name}`);
     console.log(`WORKFLOW_ID=${workflow._id}`); // Output ID for frontend config
+
+    // Create System PR Bot Workflow
+    const prBot = await Workflow.create({
+        name: 'PR Review Bot',
+        description: 'Automatically reviews Pull Requests',
+        type: 'system_pr_bot',
+        user: user._id,
+        steps: [
+            { id: 'step_1', action: 'FETCH_PR_CHANGES' },
+            { id: 'step_2', action: 'ANALYZE_CODE', config: { promptType: 'review_json' } },
+            { id: 'step_3', action: 'POST_PR_COMMENT' }
+        ]
+    });
+    console.log(`PR Bot Workflow created: ${prBot.name}`);
 
     process.exit();
   } catch (err) {
